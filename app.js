@@ -1,7 +1,20 @@
-const mysql = require('mysql')
+const mysql = require('mysql2')
 const inquirer = require("inquirer");
 const path = require("path");
 const cTable = require('console.table'); 
+const figlet = require('figlet')
+const chalk = require('chalk')
+
+const init = () => { 
+    console.log(chalk.green(figlet.textSync('Employee Tracker', {
+        // font: 'Cursive',
+        horizontalLayout: 'full',
+        verticalLayout: 'full',
+        width: 70,
+        whitespaceBreak: true
+    })));
+    console.log('\n');
+}
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -11,7 +24,7 @@ var connection = mysql.createConnection({
 });
 
 //cms options prompts
-
+init()
 function employeeTrackerStart() {
     inquirer.prompt([
         {
@@ -151,8 +164,12 @@ function employeeTrackerStart() {
         switch (answers.options) {
             
             case "Add Department":
-                console.log("in Add Department");
-                restart();
+                connection.query(
+                    `INSERT INTO department(name) VALUES ('${answers.newDept}')`,
+                    function (err, results, fields) {
+                        restart()
+                    }
+                )
                 break;
             
             case "Add Role":
@@ -165,61 +182,36 @@ function employeeTrackerStart() {
 
             case "View Departments":
                 //console.log('View Departments')
-                const table = cTable.getTable([
-                    {
-                        id: 1,
-                        name: 'Sales'
-                    }, 
-                    {
-                        id: 2,
-                        name: "Engineering"
-                    },
-                    {
-                        id: 2,
-                        name: 'Finance'
+                connection.query(
+                    'SELECT * FROM department',
+                    function (err, results, fields) {
+                        let resultsTbl = cTable.getTable(results)
+                        console.log(`\n${resultsTbl}`); 
+                        restart()
                     }
-                ]);
-
-                console.log(table);
-                restart();
+                )
                 break;
 
             case "View Roles":
-                const table1 = cTable.getTable([
-                    {
-                        id: 1,
-                        name: 'Salesperson'
-                    }, 
-                    {
-                        id: 2,
-                        name: "Accountant"
-                    },
-                    {
-                        id: 2,
-                        name: 'Lawyer'
+                connection.query(
+                    'SELECT * FROM role',
+                    function (err, results, fields) {
+                        let resultsTbl = cTable.getTable(results)
+                        console.log(`\n${resultsTbl}`); 
+                        restart()
                     }
-                ]);
-                console.log(table1);
-                restart();
+                )
                 break;
 
             case "View Employees":
-                const table2 = cTable.getTable([
-                    {
-                        id: 1,
-                        name: 'john'
-                    }, 
-                    {
-                        id: 2,
-                        name: "jane"
-                    },
-                    {
-                        id: 2,
-                        name: 'joe'
+                connection.query(
+                    'SELECT * FROM employee',
+                    function (err, results, fields) {
+                        let resultsTbl = cTable.getTable(results)
+                        console.log(`\n${resultsTbl}`); 
+                        restart()
                     }
-                ]);
-                console.log(table2);
-                restart();
+                )
                 break;
 
             case "Update Employee Role":
