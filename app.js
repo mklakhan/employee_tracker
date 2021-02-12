@@ -78,9 +78,10 @@ function employeeTrackerStart() {
             type: "list",
             message: "What is the Department of the role?",
             name: "newRoleDeptId",
-            choices: (answers) => {
-                 let anArr = ["Legal", "Finance", "Engineering"];
-                return anArr;
+            choices: async (answers) => {
+                 const [rows, field] = await connection.promise().query('SELECT name FROM department')
+                return rows;
+                
             },
             when: (answers) => {
                 if (answers.options == 'Add Role') {
@@ -115,9 +116,15 @@ function employeeTrackerStart() {
             type: "list",
             message: "What is the role of the employee",
             name: "newRoleId",
-            choices: (answers) => {
-                 let anArr = ["Salesperson", "Lawyer", "Accountant"];
-                return anArr;
+            choices: async (answers) => {
+                const [rows, field] = await connection.promise().query('SELECT title FROM role');
+
+                const roleArr = [];
+                rows.forEach(item => {
+                    return roleArr.push(item.title)
+                })
+
+                return roleArr;
             },
             when: (answers) => {
                 if (answers.options == 'Add Employee') {
@@ -130,9 +137,16 @@ function employeeTrackerStart() {
             type: "list",
             message: "Who is the Manager of the employee",
             name: "newEmpMgr",
-            choices: (answers) => {
-                 let anArr = ["Mary", "John", "Jane"];
-                return anArr;
+            choices: async (answers) => {
+                let query1 = `SELECT concat(first_name,' ',last_name) AS manager FROM employee`;
+                const [rows, field] = await connection.promise().query(query1)
+
+                const managerArr = [];
+                rows.forEach(item => {
+                    return managerArr.push(item.manager)
+                })
+
+                return managerArr;
             },
             when: (answers) => {
                 if (answers.options == 'Add Employee') {
@@ -173,11 +187,36 @@ function employeeTrackerStart() {
                 break;
             
             case "Add Role":
-                restart();
+                let myQuery = `INSERT INTO role (title, salary, department_id) VALUES ('${answers.newRoleTitle}', '${answers.newRoleSalary}', (SELECT id FROM department WHERE name='${answers.newRoleDeptId}'))` 
+                connection.query(
+                    myQuery,
+                    function (err, results, fields) {
+                        console.log("New Role Added!!");
+                        restart()
+                    }
+                )
                 break;
+                console.log(answers.newRoleTitle)
+                console.log(answers.newRoleSalary)
+                console.log(answers.newRoleDeptId)
+               
 
             case "Add Employee":
-                restart();
+                const mgrName = answers.newEmpMgr.split(' ')
+                console.log('First name:', mgrName[0]);
+                console.log('Last name:', mgrName[1]);
+                
+                let myQuery2 = `INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES('${answers.newEmpFirst}','${answers.newEmpLast}',(SELECT id FROM role WHERE title='${answers.newRoleId}'),(SELECT id FROM employee emply WHERE emply.first_name='${mgrName[0]}' AND emply.last_name='${mgrName[1]}'))`;
+
+
+                connection.query(
+                    myQuery2,
+                    function (err, results, fields) {
+                        let resultsTbl = cTable.getTable(results)
+                        console.log(`\n${resultsTbl}`); 
+                        restart()
+                    }
+                )
                 break;
 
             case "View Departments":
